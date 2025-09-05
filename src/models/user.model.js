@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 
 const Schema = mongoose.Schema;
 
@@ -22,5 +23,12 @@ const user = new Schema({
     "resetPasswordToken": { type: String },
     "resetPasswordExpire": { type: Date },
 }, {timestamps: true});
+
+user.pre("save", async function (next) {
+    if(!this.isModified("password")) return next();
+
+    this.password = await bcrypt.hash(this.password, 5);
+    next();
+})
 
 export const UserModel = mongoose.model("User", user);
