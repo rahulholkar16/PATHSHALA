@@ -1,7 +1,8 @@
 import express from 'express';
 import dotenv from "dotenv";
 import cors from "cors";
-import healthCheck from './routes/healthCheck.routes.js';
+import healthCheck from "./routes/healthCheck.routes.js";
+import authRouter from "./routes/auth.routes.js";
 
 dotenv.config();
 const app = express();
@@ -17,11 +18,6 @@ app.use(cors({
 
 
 app.use("/api/v1/healthcheck", healthCheck);
-
-app.get('/', (req, res) => {
-    res.json({
-        msg: "testing"
-    })
-})
+app.use("/api/v1/auth", authRouter);
 
 export default app;
