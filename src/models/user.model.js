@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 const Schema = mongoose.Schema;
 
@@ -22,6 +24,7 @@ const user = new Schema({
     "verificationTokenExpire": { type: Date },
     "resetPasswordToken": { type: String },
     "resetPasswordExpire": { type: Date },
+    "refreshToken": { type: String }
 }, {timestamps: true});
 
 user.pre("save", async function (next) {
@@ -30,5 +33,41 @@ user.pre("save", async function (next) {
     this.password = await bcrypt.hash(this.password, 5);
     next();
 })
+
+user.method.isPasswordCorrect = async function (password) {
+    return await bcrypt.compare(password, this.password);
+}
+
+user.method.generateAccessToken = function () {
+    return jwt.sign({
+        _id: this._id,
+        email: this.email
+    }, process.env.ACCESS_JWT_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRY })
+}
+
+user.method.generateRefreshToken = function () {
+    return jwt.sign({
+        _id: this._id,
+        email: this.email
+    }, process.env.REFRESH_JWT_SECRET, { expiresIn: process.env.REFRESH_TOKEN_EXPIRY })
+}
+
+user.method.generateRefreshToken = function () {
+    return jwt.sign({
+        _id: this._id,
+        email: this.email
+    }, process.env.REFRESH_JWT_SECRET, { expiresIn: process.env.REFRESH_TOKEN_EXPIRY })
+}
+
+user.method.generateTempToken = function () {
+    const unHashedToken = crypto.randomBytes(20).toString("hex");
+    const hashedToken = crypto
+            .createHash("sha256")
+            .update(unHashedToken)
+            .digest("hex");
+
+    const tokenExpiry = Date.now() + (10*60*1000) // 10 min
+    return { unHashedToken, hashedToken, tokenExpiry };
+}
 
 export const UserModel = mongoose.model("User", user);
