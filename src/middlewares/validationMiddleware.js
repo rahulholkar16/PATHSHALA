@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const validationMiddleware = z.object({
+const UserSchema = z.object({
     name: z
         .string({ message: "Invalid name!" })
         .trim()
@@ -8,7 +8,7 @@ export const validationMiddleware = z.object({
         .max(15, { message: "Name must be at most 15 characters long!" }),
 
     email: z.preprocess(
-        (val) => typeof val === "string" ? val.trim().toLowerCase() : val,
+        (val) => (typeof val === "string" ? val.trim().toLowerCase() : val),
         z.email({ message: "Invalid email address" })
     ),
 
@@ -16,8 +16,26 @@ export const validationMiddleware = z.object({
         .string()
         .min(8, { message: "Password must be at least 8 characters long" })
         .max(64, { message: "Password must be at most 64 characters long" })
-        .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
-        .regex(/[a-z]/, { message: "Password must contain at least one lowercase letter" })
+        .regex(/[A-Z]/, {
+            message: "Password must contain at least one uppercase letter",
+        })
+        .regex(/[a-z]/, {
+            message: "Password must contain at least one lowercase letter",
+        })
         .regex(/[0-9]/, { message: "Password must contain at least one number" })
-        .regex(/[@$!%*?&#]/, { message: "Password must contain at least one special character (@, $, !, %, *, ?, &, #)" }),
-})
+        .regex(/[@$!%*?&#]/, {
+            message:
+                "Password must contain at least one special character (@, $, !, %, *, ?, &, #)",
+        }),
+});
+
+export const ValidationMiddleware = (req, res, next) => {
+    const { name, email, password, role } = req.body;
+    const result = UserSchema.safeParse({ name, email, password });
+    if (!result.success) {
+        return res.status(400).json({ errors: result.error.format() });
+    }
+    req.validateData = result.data;
+    req.role = role;
+    next();
+};
