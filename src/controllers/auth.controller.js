@@ -21,16 +21,19 @@ const generateAccessAndRefreshToken = async (userId) => {
 
 const registerUser = asyncHandler(async (req, res) => {
     const { name, email, password } = req.validateData;
-    const { role } = req.role;
+    const role = req.role;
 
+    // avoid duplicate user
     const isExist = await UserModel.findOne({ email });
     if (isExist) throw new ApiError(409, "User already exists", []);
 
+    // add in db
     const newUser = await UserModel.create({
         email,
         name,
         password,
-        isVerified: false
+        isVerified: false,
+        role
     });
 
     const { unHashedToken, hashedToken, tokenExpiry } = newUser.generateTempToken();
@@ -38,14 +41,16 @@ const registerUser = asyncHandler(async (req, res) => {
     newUser.verificationToken = hashedToken;
     newUser.verificationTokenExpire = tokenExpiry;
 
-    await user.save({ validateBeforeSave: false });
+    await newUser.save({ validateBeforeSave: false });
+
+    // Send mail
     await sendEmail({
         email: newUser.email,
         subject: "Plesase verify your email.",
         mailgenContent: emailVerificationContent(newUser.name, `${req.protocal}://${req.get("host")}/api/v1/user/verify-email/${unHashedToken}`),
     })
-
-    const data = await UserModel.findById(user._id).select(
+    
+    const data = await UserModel.findById(newUser._id).select(
         "-password -verificationToken -resetPasswordToken -refreshToken"
     )
 
@@ -56,4 +61,44 @@ const registerUser = asyncHandler(async (req, res) => {
     )
 });
 
-export { registerUser };
+const loginUser = asyncHandler(async (req, res) => {
+    const { email, password } = req.body;
+
+    if(!email && !password) throw new ApiError(400, "Email and Password is required."); 
+
+    const user = await UserModel.findOne({ email });
+
+    if(!user) throw new ApiError(400, "User does not exists!");
+
+    const isPasswordValid = await user.isPasswordCorrect(password);
+
+    if(!isPasswordValid) throw new ApiError(400, "Invalid Password");
+
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
+
+    const loggedInUser = await UserModel.findById(user._id).select(
+        "-password -verificationToken -resetPasswordToken -refreshToken"
+    );
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res.status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    user: loggedInUser,
+                    accessToken,
+                    refreshToken
+                },
+                "User logged in successfully."
+            )
+        );
+})
+
+export { registerUser, loginUser };
