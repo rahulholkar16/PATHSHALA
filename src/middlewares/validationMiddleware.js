@@ -60,7 +60,8 @@ const ValidationMiddleware = (req, res, next) => {
 
 const passwordValidator = (req, res, next) => {
     const { password: newPassword } = req.body;
-    const result = PasswordSchema.safeParse({ newPassword });
+    
+    const result = PasswordSchema.safeParse({ password: newPassword });
     if (!result.success) {
         return res.status(400).json({ errors: result.error.format() });
     }
