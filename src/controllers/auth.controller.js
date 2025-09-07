@@ -2,6 +2,7 @@ import { ApiResponse } from "../utils/apiResponse.js";
 import { ApiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { UserModel } from "../models/user.model.js";
+import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { sendEmail, emailVerificationContent, forgotPasswordContent } from "../services/sendMail.services.js";
 
@@ -267,13 +268,13 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
 const resetForgotPassword = asyncHandler(async (req, res) => {
     const { resetToken } = req.params;
-    const { newPassword } = req.body;
+    const { password: newPassword } = req.body;
 
     let hashedToken = crypto.createHash("sha256")
         .update(resetToken)
         .digest("hex")
 
-    await UserModel.findOne({
+    const user = await UserModel.findOne({
         resetPasswordToken: hashedToken,
         resetPasswordExpire: { $gt: Date.now() }
     })
@@ -295,8 +296,8 @@ const resetForgotPassword = asyncHandler(async (req, res) => {
 });
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {
-    const { oldPassword, newPassword } = req.body;
-
+    const { oldPassword, password: newPassword } = req.body;
+    
     const user = await UserModel.findById(req.user?._id);
     const isPasswordValid = await user.isPasswordCorrect(oldPassword);
 
