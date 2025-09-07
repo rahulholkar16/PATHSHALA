@@ -29,7 +29,25 @@ const UserSchema = z.object({
         }),
 });
 
-export const ValidationMiddleware = (req, res, next) => {
+const PasswordSchema = z.object({
+    password: z
+        .string()
+        .min(8, { message: "Password must be at least 8 characters long" })
+        .max(64, { message: "Password must be at most 64 characters long" })
+        .regex(/[A-Z]/, {
+            message: "Password must contain at least one uppercase letter",
+        })
+        .regex(/[a-z]/, {
+            message: "Password must contain at least one lowercase letter",
+        })
+        .regex(/[0-9]/, { message: "Password must contain at least one number" })
+        .regex(/[@$!%*?&#]/, {
+            message:
+                "Password must contain at least one special character (@, $, !, %, *, ?, &, #)",
+        }),
+})
+
+const ValidationMiddleware = (req, res, next) => {
     const { name, email, password, role } = req.body;
     const result = UserSchema.safeParse({ name, email, password });
     if (!result.success) {
@@ -39,3 +57,14 @@ export const ValidationMiddleware = (req, res, next) => {
     req.role = role;
     next();
 };
+
+const passwordValidator = (req, res, next) => {
+    const { password: newPassword } = req.body;
+    const result = PasswordSchema.safeParse({ newPassword });
+    if (!result.success) {
+        return res.status(400).json({ errors: result.error.format() });
+    }
+    next();
+}
+
+export { ValidationMiddleware, passwordValidator };
