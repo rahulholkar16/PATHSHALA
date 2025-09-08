@@ -9,14 +9,11 @@ export const allowPermission = asyncHandler((...requiredPermission) => {
             return next(); // admin full access
         }
 
-        const hasPermission = requiredPermission.every(p =>
-            req.user.permissions.includes(p)
-        );
+        const hasPermission = requiredPermission.every(p => req.user.permissions.includes(p) );
 
         if (!hasPermission) {
             throw new ApiError(403, "Forbidden: You do not have required permissions");
         }
-
         next();
     }
 })
