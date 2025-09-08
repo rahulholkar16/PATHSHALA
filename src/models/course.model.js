@@ -52,4 +52,37 @@ const CourseSchema = new Schema(
     { timestamps: true }
 );
 
+CourseSchema.pre("save", function (next) {
+    if(this.isFree) {
+        this.price = 0;
+    }
+    next();
+});
+
+CourseSchema.pre("save", function (next) {
+    if (this.isModified("status") && this.status === "Published" && !this.publishedAt) {
+        this.publishedAt = new Date();
+    }
+    next();
+});
+
+CourseSchema.pre("save", function (next) {
+    this.lastUpdated = new Date();
+    next();
+});
+
+CourseSchema.virtual("studentCount").get(function () {
+    return this.enrollStudents ? this.enrollStudents.length : 0;
+});
+
+CourseSchema.methods.updateAverageRating = async function () {
+    if (this.reviews.length === 0) {
+        this.averageRating = 0;
+    } else {
+        const total = this.reviews.reduce((sum, r) => sum + r.rating, 0);
+        this.averageRating = total / this.reviews.length;
+    }
+    return await this.save();
+}
+
 export const CourseModel = mongoose.model("Course", CourseSchema);
