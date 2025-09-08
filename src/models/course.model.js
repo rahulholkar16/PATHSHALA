@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import slugify from "slugify";
 
 const Schema = mongoose.Schema;
 
@@ -55,6 +56,14 @@ const CourseSchema = new Schema(
 CourseSchema.pre("save", function (next) {
     if(this.isFree) {
         this.price = 0;
+    }
+    next();
+});
+
+
+CourseSchema.pre("save", function (next) {
+    if (this.isModified("title")) {
+        this.slug = slugify(this.title, { lower: true, strict: true });
     }
     next();
 });
