@@ -53,6 +53,44 @@ const CourseSchema = new Schema(
     { timestamps: true }
 );
 
+const LectureSchema = new Schema({
+    title: { type: String, required: true, trim: true },
+    description: { type: String, trim: true },
+    video: { type: String, required: true },
+    videoPublicId: { type: String },  // for deleting from cloud
+    duration: { type: Number, required: true }, // in seconds
+    durationFormatted: { type: String }, // optional: "10:35"
+    courseId: { type: Schema.Types.ObjectId, required: true, ref: "Course" },
+    thumbnail: { type: String, required: true },
+    thumbnailPublicId: { type: String }, // for deleting from cloud
+    instructor: { type: Schema.Types.ObjectId, required: true, ref: "User" },
+    resourceFiles: [{ type: String }],
+    section: { type: Schema.Types.ObjectId, ref: "Section", required: true },
+    views: { type: Number, default: 0 },
+    order: { type: Number, default: 0 },
+    captions: { type: String }, // optional subtitle file
+    transcript: { type: String }, // optional transcript
+    isDeleted: { type: Boolean, default: false }
+}, { timestamps: true });
+
+LectureSchema.pre("save", function (next) {
+    if (this.duration && !this.durationFormatted) {
+        const sec = this.duration % 60;
+        const min = Math.floor(this.duration / 60) % 60;
+        const hr = Math.floor(this.duration / 3600);
+        this.durationFormatted =
+            (hr ? hr + ":" : "") +
+            (min < 10 ? "0" + min : min) + ":" +
+            (sec < 10 ? "0" + sec : sec);
+    }
+    next();
+});
+
+LectureSchema.methods.incrementViews = async function () {
+    this.views += 1;
+    return this.save();
+};
+
 CourseSchema.pre("save", function (next) {
     if(this.isFree) {
         this.price = 0;
