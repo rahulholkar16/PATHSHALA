@@ -85,7 +85,7 @@ export const getCourse = asyncHandler(async (req, res) => {
     if (minPrice || maxPrice) {
         filters.price = {};
         if (minPrice) filters.price.$gte = Number(minPrice);
-        if (maxPrice) filters.price.$lte = Number(minPrice);
+        if (maxPrice) filters.price.$lte = Number(maxPrice);
     };
 
     let sort = { createdAt: -1 };
@@ -114,6 +114,7 @@ export const getCourse = asyncHandler(async (req, res) => {
     );
 });
 
+// Admin
 export const getAllCourse = asyncHandler(async (req, res) => {
     const {
         search, //title
