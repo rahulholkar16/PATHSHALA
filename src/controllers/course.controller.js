@@ -166,3 +166,39 @@ export const getAllCourse = asyncHandler(async (req, res) => {
         }, "Courses fetched successfully")
     );
 });
+
+export const updateCourse = asyncHandler(async (req, res) => {
+    const { courseId } = req.params;
+    const course = await CourseModel.findById(courseId);
+    if(!course) throw new ApiError(400, "Course not found.");
+
+    const {
+        title,
+        description,
+        price,
+        category,
+        level,
+        language,
+        status,
+    } = req.body;
+
+    if (req.file?.path) {
+        const thumbnail = await uploadOnCloud(req.file.path);
+        course.thumbnail = thumbnail || thumbnail.url;
+    };
+
+    if (title) course.title = title;
+    if (description) course.description = description;
+    if (language) course.language = language;
+    if (level) course.level = level;
+    if (price) course.price = Number(price);
+    if (status) course.status = status;
+    if (category) course.category = Array.isArray(category) ? category : category.split(",");
+
+    await course.save({ validateBeforeSave: false });
+
+    return res.status(200).json(
+        new ApiResponse(200, course, "Course update successfully.")
+    );
+});
+
