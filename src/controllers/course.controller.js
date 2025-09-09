@@ -55,7 +55,6 @@ export const createCourse = asyncHandler(async (req, res) => {
     res.status(200).json( new ApiResponse(200, newCourse, "course added successfully."));
 });
 
-
 // Student
 export const getCourse = asyncHandler(async (req, res) => {
     const {
@@ -202,3 +201,15 @@ export const updateCourse = asyncHandler(async (req, res) => {
     );
 });
 
+export const deleteCourse = asyncHandler(async (req, res) => {
+    const { courseId } = req.params;
+
+    const course = await CourseModel.findById(courseId);
+    if (!course) throw new ApiError(400, "Course not found.");
+
+    await CourseModel.findByIdAndDelete(courseId);
+
+    return res.status(200).json(
+        new ApiResponse(200, {}, "Course delete successfully!")
+    );
+});
