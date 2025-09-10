@@ -3,6 +3,18 @@ import slugify from "slugify";
 
 const Schema = mongoose.Schema;
 
+async function calculateDuration( sectionId, courseId ) {
+    // calulation of section model duration
+    const Lecture = await mongoose.model("Lecture").find({ sectionId });
+    const sectionDuration = Lecture.reduce((sum, lec) => sum + lec.duration, 0);
+    await SectionModel.findByIdAndUpdate(sectionId, { duration: sectionDuration });
+
+    // calulation of course model duration
+    const sections = await SectionModel.find({ courseId: courseId });
+    const courseDuration = sections.reduce((sum, lec) => sum + (sec.duration || 0), 0);
+    await CourseModel.findByIdAndUpdate(courseId, { duration: courseDuration });
+};
+
 /* ---------------- Review Schema ---------------- */
 const ReviewSchema = new Schema(
     {
@@ -24,6 +36,7 @@ const LectureSchema = new Schema(
         durationFormatted: { type: String }, // e.g., "12:30"
         thumbnail: { type: String },
         thumbnailPublicId: { type: String },
+        courseId: { type: Schema.Types.ObjectId, ref: "Course", required: true },
         sectionId: { type: Schema.Types.ObjectId, ref: "Section", required: true },
         instructor: { type: Schema.Types.ObjectId, ref: "User", required: true },
         resourceFiles: [{ type: String }], // PDFs, notes, etc.
@@ -48,6 +61,14 @@ LectureSchema.pre("save", function (next) {
             (sec < 10 ? "0" + sec : sec);
     }
     next();
+});
+
+LectureSchema.post("save", async function () {
+    await calculateDuration(this.sectionId, this.courseId);
+});
+
+LectureSchema.post("remove", async function () {
+    await calculateDuration(this.sectionId, this.courseId);
 });
 
 LectureSchema.methods.incrementViews = async function () {
