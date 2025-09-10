@@ -1,7 +1,7 @@
 import { ApiResponse } from "../utils/apiResponse.js";
 import { ApiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { CourseModel } from "../models/course.model.js";
+import { CourseModel, SectionModel } from "../models/course.model.js";
 import { uploadOnCloud } from "../services/fileUploder.services.js";
 
 export const createCourse = asyncHandler(async (req, res) => {
@@ -213,5 +213,47 @@ export const deleteCourse = asyncHandler(async (req, res) => {
         new ApiResponse(200, {}, "Course delete successfully!")
     );
 });
+
+export const addSection = asyncHandler(async (req, res) => {
+    const { title, description, order } = req.body;
+    const { courseId } = req.params;
+
+    
+    if(!title || !description || !order || !courseId) throw new ApiError(400, "All fields are required.");
+
+    const isCourse = await CourseModel.findById(courseId);
+    if (!isCourse) throw new ApiError(404, "Course not found");
+    const isTitle = await SectionModel.findOne({ title, courseId });
+    if(isTitle) throw new ApiError(409, "Duplicate title");
+
+    const newSection = await SectionModel.create({
+        title,
+        description,
+        order,
+        courseId
+    });
+
+    return res.status(200).json(
+        new ApiResponse(200, newSection, "Section add successfully.")
+    );
+});
+
+const updateSection = asyncHandler(async (req, res) => {
+    const { title, description, order } = req.body;
+    const { sectionId } = req.params;
+
+    const update = {};
+    if (title) update.title = title;
+    if (description) update.description = description;
+    if (order) update.order = order;
+
+    const section = await SectionModel.findByIdAndUpdate(sectionId, { $set: update }, { new: true, runValidators: true });
+    if(!section) throw new ApiError(404, "Section not found");
+
+    return res.status(200).json(
+        new ApiResponse(200, section, "Section updated")
+    );
+});
+
 
 
