@@ -3,6 +3,7 @@ import slugify from "slugify";
 
 const Schema = mongoose.Schema;
 
+/* ---------------- Review Schema ---------------- */
 const ReviewSchema = new Schema(
     {
         user: { type: Schema.Types.ObjectId, ref: "User", required: true },
@@ -12,12 +13,73 @@ const ReviewSchema = new Schema(
     { timestamps: true }
 );
 
+/* ---------------- Lecture Schema ---------------- */
+const LectureSchema = new Schema(
+    {
+        title: { type: String, required: true, trim: true },
+        description: { type: String, trim: true },
+        videoUrl: { type: String, required: true },
+        videoPublicId: { type: String }, // for cloud deletion
+        duration: { type: Number, required: true }, // seconds
+        durationFormatted: { type: String }, // e.g., "12:30"
+        thumbnail: { type: String },
+        thumbnailPublicId: { type: String },
+        sectionId: { type: Schema.Types.ObjectId, ref: "Section", required: true },
+        instructor: { type: Schema.Types.ObjectId, ref: "User", required: true },
+        resourceFiles: [{ type: String }], // PDFs, notes, etc.
+        captions: { type: String }, // subtitle file
+        transcript: { type: String },
+        views: { type: Number, default: 0 },
+        order: { type: Number, default: 0 },
+        isDeleted: { type: Boolean, default: false },
+    },
+    { timestamps: true }
+);
+
+LectureSchema.pre("save", function (next) {
+    if (this.duration && !this.durationFormatted) {
+        const sec = this.duration % 60;
+        const min = Math.floor(this.duration / 60) % 60;
+        const hr = Math.floor(this.duration / 3600);
+        this.durationFormatted =
+            (hr ? hr + ":" : "") +
+            (min < 10 ? "0" + min : min) +
+            ":" +
+            (sec < 10 ? "0" + sec : sec);
+    }
+    next();
+});
+
+LectureSchema.methods.incrementViews = async function () {
+    this.views += 1;
+    return this.save();
+};
+
+/* ---------------- Section Schema ---------------- */
+const SectionSchema = new Schema(
+    {
+        title: { type: String, required: true, trim: true },
+        description: { type: String, trim: true },
+        order: { type: Number, default: 0 },
+        courseId: { type: Schema.Types.ObjectId, ref: "Course", required: true },
+        lectures: [{ type: Schema.Types.ObjectId, ref: "Lecture" }],
+        duration: { type: Number, default: 0 }, // auto calc
+        isDeleted: { type: Boolean, default: false },
+    },
+    { timestamps: true }
+);
+
+SectionSchema.methods.getLectureCount = function () {
+    return this.lectures ? this.lectures.length : 0;
+};
+
+/* ---------------- Course Schema ---------------- */
 const CourseSchema = new Schema(
     {
         title: { type: String, required: true, trim: true },
         slug: { type: String, required: true, unique: true },
         description: { type: String, required: true },
-        category: { type: [String], required: true }, // array of strings
+        category: { type: [String], required: true }, // tags/categories
         level: {
             type: String,
             enum: ["Beginner", "Intermediate", "Advanced"],
@@ -53,51 +115,11 @@ const CourseSchema = new Schema(
     { timestamps: true }
 );
 
-const LectureSchema = new Schema({
-    title: { type: String, required: true, trim: true },
-    description: { type: String, trim: true },
-    video: { type: String, required: true },
-    videoPublicId: { type: String },  // for deleting from cloud
-    duration: { type: Number, required: true }, // in seconds
-    durationFormatted: { type: String }, // optional: "10:35"
-    courseId: { type: Schema.Types.ObjectId, required: true, ref: "Course" },
-    thumbnail: { type: String, required: true },
-    thumbnailPublicId: { type: String }, // for deleting from cloud
-    instructor: { type: Schema.Types.ObjectId, required: true, ref: "User" },
-    resourceFiles: [{ type: String }],
-    section: { type: Schema.Types.ObjectId, ref: "Section", required: true },
-    views: { type: Number, default: 0 },
-    order: { type: Number, default: 0 },
-    captions: { type: String }, // optional subtitle file
-    transcript: { type: String }, // optional transcript
-    isDeleted: { type: Boolean, default: false }
-}, { timestamps: true });
-
-LectureSchema.pre("save", function (next) {
-    if (this.duration && !this.durationFormatted) {
-        const sec = this.duration % 60;
-        const min = Math.floor(this.duration / 60) % 60;
-        const hr = Math.floor(this.duration / 3600);
-        this.durationFormatted =
-            (hr ? hr + ":" : "") +
-            (min < 10 ? "0" + min : min) + ":" +
-            (sec < 10 ? "0" + sec : sec);
-    }
-    next();
-});
-
-LectureSchema.methods.incrementViews = async function () {
-    this.views += 1;
-    return this.save();
-};
-
+/* ---------------- Hooks & Virtuals ---------------- */
 CourseSchema.pre("save", function (next) {
-    if(this.isFree) {
-        this.price = 0;
-    }
+    if (this.isFree) this.price = 0;
     next();
 });
-
 
 CourseSchema.pre("save", function (next) {
     if (this.isModified("title")) {
@@ -130,6 +152,9 @@ CourseSchema.methods.updateAverageRating = async function () {
         this.averageRating = total / this.reviews.length;
     }
     return await this.save();
-}
+};
 
+/* ---------------- Models ---------------- */
 export const CourseModel = mongoose.model("Course", CourseSchema);
+export const SectionModel = mongoose.model("Section", SectionSchema);
+export const LectureModel = mongoose.model("Lecture", LectureSchema);
