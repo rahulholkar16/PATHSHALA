@@ -81,7 +81,7 @@ const SectionSchema = new Schema(
     {
         title: { type: String, required: true, trim: true },
         description: { type: String, trim: true },
-        order: { type: Number, default: 0 },
+        order: { type: Number, default: 0, unique: true },
         courseId: { type: Schema.Types.ObjectId, ref: "Course", required: true },
         lectures: [{ type: Schema.Types.ObjectId, ref: "Lecture" }],
         duration: { type: Number, default: 0 }, // auto calc
