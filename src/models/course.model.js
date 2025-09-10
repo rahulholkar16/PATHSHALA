@@ -85,7 +85,6 @@ const SectionSchema = new Schema(
         courseId: { type: Schema.Types.ObjectId, ref: "Course", required: true },
         lectures: [{ type: Schema.Types.ObjectId, ref: "Lecture" }],
         duration: { type: Number, default: 0 }, // auto calc
-        isDeleted: { type: Boolean, default: false },
     },
     { timestamps: true }
 );
@@ -159,6 +158,16 @@ CourseSchema.pre("save", function (next) {
 CourseSchema.pre("save", function (next) {
     this.lastUpdated = new Date();
     next();
+});
+
+CourseSchema.post("remove", async function () {
+    const courseId = this._id;
+    const sections = await SectionModel.find({ courseId });
+
+    for (const section of sections) {
+        await LectureModel.deleteMany({ sectionId: section._id });
+        await section.remove();
+    };
 });
 
 CourseSchema.virtual("studentCount").get(function () {
