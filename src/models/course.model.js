@@ -160,7 +160,7 @@ CourseSchema.pre("save", function (next) {
     next();
 });
 
-CourseSchema.post("remove", async function () {
+CourseSchema.post("findOneAndDelete", async function () {
     const courseId = this._id;
     const sections = await SectionModel.find({ courseId });
 
