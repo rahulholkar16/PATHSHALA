@@ -255,5 +255,15 @@ const updateSection = asyncHandler(async (req, res) => {
     );
 });
 
+export const deleteSection = asyncHandler(async (req, res) => {
+    const { sectionId } = req.params;
+    
+    if(!sectionId) throw new ApiError(404, "Section not found.");
+    const section = await SectionModel.findByIdAndDelete(sectionId);
+    
+    if(!section) throw new ApiError(404, "Section not found.");
 
-
+    return res.status(200).json(
+        new ApiResponse(200, {}, "Section delete successfully.")
+    )
+});
