@@ -238,7 +238,7 @@ export const addSection = asyncHandler(async (req, res) => {
     );
 });
 
-const updateSection = asyncHandler(async (req, res) => {
+export const updateSection = asyncHandler(async (req, res) => {
     const { title, description, order } = req.body;
     const { sectionId } = req.params;
 
