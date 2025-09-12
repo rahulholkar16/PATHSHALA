@@ -267,3 +267,11 @@ export const deleteSection = asyncHandler(async (req, res) => {
         new ApiResponse(200, {}, "Section delete successfully.")
     )
 });
+
+export const addLecture = asyncHandler(async (req, res) => {
+    const { title, description, duration, order } = req.body;
+    if(!title || !description || !duration || !order) throw new ApiError(404, "All field are required.");
+
+    const { video, pdf, thumbnail } = req.file.path;
+    
+})
