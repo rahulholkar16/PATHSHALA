@@ -345,3 +345,13 @@ export const updateLecture = asyncHandler(async (req, res) => {
         new ApiResponse(200, lecture, "Lecture update successfully.")
     );
 });
+
+export const deleteLecture = asyncHandler(async (req, res) => {
+    const { lectureId } = req.params;
+
+    const lecture = await LectureModel.findByIdAndDelete(lectureId);
+
+    return res.status(200).json(
+        new ApiResponse(200, {}, "Lecture delete successfully.")
+    );
+});
