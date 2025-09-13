@@ -1,7 +1,7 @@
 import { ApiResponse } from "../utils/apiResponse.js";
 import { ApiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { CourseModel, SectionModel } from "../models/course.model.js";
+import { CourseModel, LectureModel, SectionModel } from "../models/course.model.js";
 import { uploadOnCloud } from "../services/fileUploder.services.js";
 
 export const createCourse = asyncHandler(async (req, res) => {
@@ -270,8 +270,38 @@ export const deleteSection = asyncHandler(async (req, res) => {
 
 export const addLecture = asyncHandler(async (req, res) => {
     const { title, description, duration, order } = req.body;
+    const { courseId, sectionId } = req.query;
+    const user = req.user;
     if(!title || !description || !duration || !order) throw new ApiError(404, "All field are required.");
 
     const { video, pdf, thumbnail } = req.file.path;
-    
-})
+
+    if(!video || !pdf || !thumbnail) throw new ApiError(404, "All resource are required.");
+    let thumbnailUrl = null;
+    let videoUrl = null;
+    let pdfUrl = null;
+    if (req.file?.path) {
+        thumbnailUrl = await uploadOnCloud(thumbnail);
+        videoUrl = await uploadOnCloud(video);
+        pdfUrl = await uploadOnCloud(pdf);
+    } else {
+        throw new ApiError(400, "Thumbnail is required!");
+    }
+
+    const newLecture = await LectureModel.create({
+        title,
+        description,
+        videoUrl: videoUrl.url,
+        videoPublicId: videoUrl.public_id,
+        duration,
+        thumbnail: thumbnailUrl.url,
+        thumbnailPublicId: thumbnailUrl.public_id,
+        courseId,
+        sectionId,
+        instructor: user._id,
+        resourceFiles: pdfUrl.url,
+        order
+    });
+
+    res.status(200).json(new ApiResponse(200, newLecture, "Lecuture added successfully."));
+});
