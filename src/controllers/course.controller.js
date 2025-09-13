@@ -15,7 +15,7 @@ export const createCourse = asyncHandler(async (req, res) => {
         language,
         status,
     } = req.body;
-    
+
     let thumbnailUrl = null;
 
     if (req.file?.path) {
@@ -52,7 +52,7 @@ export const createCourse = asyncHandler(async (req, res) => {
         instructor: user._id
     });
 
-    res.status(200).json( new ApiResponse(200, newCourse, "course added successfully."));
+    res.status(200).json(new ApiResponse(200, newCourse, "course added successfully."));
 });
 
 // Student
@@ -68,13 +68,13 @@ export const getCourse = asyncHandler(async (req, res) => {
         page = 1,
         limit = 10,
     } = req.query;
-    
+
     const filters = { status: "Published" };
 
     if (search) {
         filters.$or = [
-            {title: { $regex: search, $options: "i" }},
-            {description: { $regex: search, $options: "i" }},
+            { title: { $regex: search, $options: "i" } },
+            { description: { $regex: search, $options: "i" } },
         ];
     }
 
@@ -88,9 +88,9 @@ export const getCourse = asyncHandler(async (req, res) => {
     };
 
     let sort = { createdAt: -1 };
-    if (sortBy === "price_low_high") sort = { price: 1};
-    if (sortBy === "price_high_low") sort = { price: -1};
-    if (sortBy === "rating") sort = { averageRating: -1};
+    if (sortBy === "price_low_high") sort = { price: 1 };
+    if (sortBy === "price_high_low") sort = { price: -1 };
+    if (sortBy === "rating") sort = { averageRating: -1 };
 
     const course = await CourseModel.find(filters)
         .populate("instructor", "name email avatar")
@@ -126,7 +126,7 @@ export const getAllCourse = asyncHandler(async (req, res) => {
         status //Admin can filter by status
     } = req.query;
 
-    const filters  = {};
+    const filters = {};
 
     if (search) {
         filters.$or = [
@@ -169,7 +169,7 @@ export const getAllCourse = asyncHandler(async (req, res) => {
 export const updateCourse = asyncHandler(async (req, res) => {
     const { courseId } = req.params;
     const course = await CourseModel.findById(courseId);
-    if(!course) throw new ApiError(400, "Course not found.");
+    if (!course) throw new ApiError(400, "Course not found.");
 
     const {
         title,
@@ -218,13 +218,13 @@ export const addSection = asyncHandler(async (req, res) => {
     const { title, description, order } = req.body;
     const { courseId } = req.params;
 
-    
-    if(!title || !description || !order || !courseId) throw new ApiError(400, "All fields are required.");
+
+    if (!title || !description || !order || !courseId) throw new ApiError(400, "All fields are required.");
 
     const isCourse = await CourseModel.findById(courseId);
     if (!isCourse) throw new ApiError(404, "Course not found");
     const isTitle = await SectionModel.findOne({ title, courseId });
-    if(isTitle) throw new ApiError(409, "Duplicate title");
+    if (isTitle) throw new ApiError(409, "Duplicate title");
 
     const newSection = await SectionModel.create({
         title,
@@ -248,7 +248,7 @@ export const updateSection = asyncHandler(async (req, res) => {
     if (order) update.order = order;
 
     const section = await SectionModel.findByIdAndUpdate(sectionId, { $set: update }, { new: true, runValidators: true });
-    if(!section) throw new ApiError(404, "Section not found");
+    if (!section) throw new ApiError(404, "Section not found");
 
     return res.status(200).json(
         new ApiResponse(200, section, "Section updated")
@@ -257,11 +257,11 @@ export const updateSection = asyncHandler(async (req, res) => {
 
 export const deleteSection = asyncHandler(async (req, res) => {
     const { sectionId } = req.params;
-    
-    if(!sectionId) throw new ApiError(404, "Section not found.");
+
+    if (!sectionId) throw new ApiError(404, "Section not found.");
     const section = await SectionModel.findByIdAndDelete(sectionId);
-    
-    if(!section) throw new ApiError(404, "Section not found.");
+
+    if (!section) throw new ApiError(404, "Section not found.");
 
     return res.status(200).json(
         new ApiResponse(200, {}, "Section delete successfully.")
@@ -278,7 +278,6 @@ export const addLecture = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Title, description, duration, and order are required!");
     }
 
-    // Ensure multiple files are uploaded
     if (!req.files?.video || !req.files?.thumbnail || !req.files?.pdf) {
         throw new ApiError(400, "Video, Thumbnail, and PDF are required!");
     }
@@ -308,4 +307,41 @@ export const addLecture = asyncHandler(async (req, res) => {
     return res.status(201).json(
         new ApiResponse(201, newLecture, "Lecture added successfully.")
     );
-}); 
+});
+
+export const updateLecture = asyncHandler(async (req, res) => {
+    const { title, description, duration, order } = req.body;
+    const { lectureId } = req.params;
+
+    if(!lectureId) throw new ApiError(404, "Lecture Id not found!");
+
+    const update = {}
+    if (req.files.video[0].path) {
+        const videoUrl = await uploadOnCloud(req.files.video[0].path);
+        update.videoUrl = videoUrl.url;
+        update.videoPublicId = videoUrl.public_id;
+    };
+
+    if (req.files.thumbnail[0].path) {
+        const thumbnail = await uploadOnCloud(req.files.thumbnail[0].path);
+        update.thumbnail = thumbnail.url;
+        update.thumbnailPublicId = thumbnail.public_id;
+    };
+
+    if (req.files.pdf[0].path) {
+        const pdfUrl = await uploadOnCloud(req.files.pdf[0].path);
+        update.resourceFiles = pdfUrl.url;
+    };
+
+    if(title) update.title = title;
+    if(description) update.description = description;
+    if(duration) update.duration = duration;
+    if(order) update.order = order;
+
+    const lecture = await LectureModel.findByIdAndUpdate(lectureId, { $set: update }, { new: true, runValidators: true });
+    if (!lecture) throw new ApiError(404, "Section not found");
+
+    return res.status(200).json(
+        new ApiResponse(200, lecture, "Lecture update successfully.")
+    );
+});
