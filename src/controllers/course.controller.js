@@ -271,6 +271,8 @@ export const deleteSection = asyncHandler(async (req, res) => {
 export const addLecture = asyncHandler(async (req, res) => {
     const { title, description, duration, order } = req.body;
     const { courseId, sectionId } = req.query;
+    if(!courseId) throw new ApiError(404, "Course Id not found!");
+    if(!sectionId) throw new ApiError(404, "Section Id not found!");
     const user = req.user;
     if(!title || !description || !duration || !order) throw new ApiError(404, "All field are required.");
 
