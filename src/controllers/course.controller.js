@@ -271,24 +271,24 @@ export const deleteSection = asyncHandler(async (req, res) => {
 export const addLecture = asyncHandler(async (req, res) => {
     const { title, description, duration, order } = req.body;
     const { courseId, sectionId } = req.query;
-    if(!courseId) throw new ApiError(404, "Course Id not found!");
-    if(!sectionId) throw new ApiError(404, "Section Id not found!");
     const user = req.user;
-    if(!title || !description || !duration || !order) throw new ApiError(404, "All field are required.");
 
-    const { video, pdf, thumbnail } = req.file.path;
-
-    if(!video || !pdf || !thumbnail) throw new ApiError(404, "All resource are required.");
-    let thumbnailUrl = null;
-    let videoUrl = null;
-    let pdfUrl = null;
-    if (req.file?.path) {
-        thumbnailUrl = await uploadOnCloud(thumbnail);
-        videoUrl = await uploadOnCloud(video);
-        pdfUrl = await uploadOnCloud(pdf);
-    } else {
-        throw new ApiError(400, "Thumbnail is required!");
+    if (!courseId || !sectionId) throw new ApiError(400, "Course ID and Section ID are required!");
+    if (!title || !description || duration == null || order == null) {
+        throw new ApiError(400, "Title, description, duration, and order are required!");
     }
+
+    // Ensure multiple files are uploaded
+    if (!req.files?.video || !req.files?.thumbnail || !req.files?.pdf) {
+        throw new ApiError(400, "Video, Thumbnail, and PDF are required!");
+    }
+
+    // Upload all files in parallel
+    const [videoUrl, thumbnailUrl, pdfUrl] = await Promise.all([
+        uploadOnCloud(req.files.video[0].path),
+        uploadOnCloud(req.files.thumbnail[0].path),
+        uploadOnCloud(req.files.pdf[0].path),
+    ]);
 
     const newLecture = await LectureModel.create({
         title,
@@ -302,8 +302,10 @@ export const addLecture = asyncHandler(async (req, res) => {
         sectionId,
         instructor: user._id,
         resourceFiles: pdfUrl.url,
-        order
+        order,
     });
 
-    res.status(200).json(new ApiResponse(200, newLecture, "Lecuture added successfully."));
-});
+    return res.status(201).json(
+        new ApiResponse(201, newLecture, "Lecture added successfully.")
+    );
+}); 
