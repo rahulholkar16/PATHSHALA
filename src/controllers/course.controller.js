@@ -339,7 +339,7 @@ export const updateLecture = asyncHandler(async (req, res) => {
     if(order) update.order = order;
 
     const lecture = await LectureModel.findByIdAndUpdate(lectureId, { $set: update }, { new: true, runValidators: true });
-    if (!lecture) throw new ApiError(404, "Section not found");
+    if (!lecture) throw new ApiError(404, "Lecture not found");
 
     return res.status(200).json(
         new ApiResponse(200, lecture, "Lecture update successfully.")
@@ -350,7 +350,7 @@ export const deleteLecture = asyncHandler(async (req, res) => {
     const { lectureId } = req.params;
 
     const lecture = await LectureModel.findByIdAndDelete(lectureId);
-
+    if (!lecture) throw new ApiError(400, "Lecture not found.");
     return res.status(200).json(
         new ApiResponse(200, {}, "Lecture delete successfully.")
     );
