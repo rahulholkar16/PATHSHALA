@@ -88,6 +88,11 @@ const SectionSchema = new Schema(
     { timestamps: true }
 );
 
+SectionSchema.post("findOneAndDelete", async function () {
+    const sectionId = this._id;
+    await LectureModel.deleteMany({ sectionId });
+}) // add auto delete
+
 SectionSchema.methods.getLectureCount = function () {
     return this.lectures ? this.lectures.length : 0;
 };

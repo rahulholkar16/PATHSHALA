@@ -24,7 +24,7 @@ const user = new Schema({
     "verificationTokenExpire": { type: Date },
     "resetPasswordToken": { type: String },
     "resetPasswordExpire": { type: Date },
-    "refreshToken": { type: String }
+    "refreshToken": { type: String },
 }, {timestamps: true});
 
 user.pre("save", async function (next) {
