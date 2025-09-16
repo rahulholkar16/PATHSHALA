@@ -84,7 +84,8 @@ const loginUser = asyncHandler(async (req, res) => {
 
     const options = {
         httpOnly: true,
-        secure: true
+        secure: true,
+        maxAge: pr
     }
 
     return res.status(200)
@@ -196,7 +197,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     if (!incomingRefreshToken) throw new ApiError(401, "Unauthorized access");
 
     try {
-
         const decode = jwt.verify(incomingRefreshToken, process.env.REFRESH_JWT_SECRET)
         const user = await UserModel.findById(decode?._id);
         if (!user) throw new ApiError(401, "Invalid refresh token");
