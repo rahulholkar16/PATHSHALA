@@ -16,14 +16,6 @@ const app = express();
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(cookiesParse());
-app.use(
-    "/offline-host",
-    express.static(path.join(__dirname, "offlineP2P/host"))
-);
-app.use(
-    "/offline-student",
-    express.static(path.join(__dirname, "offlineP2P/student"))
-);
 
 // cors confifrations
 app.use(
