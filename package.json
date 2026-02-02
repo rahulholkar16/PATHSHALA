@@ -28,5 +28,8 @@
     "slugify": "^1.6.6",
     "socket.io": "^4.8.1",
     "zod": "^4.1.5"
+  },
+  "devDependencies": {
+    "autocannon": "^8.0.0"
   }
 }

@@ -17,7 +17,7 @@ const generateAccessAndRefreshToken = async (userId) => {
     } catch (error) {
         throw new ApiError(500, "Something went wrong while generating access token.")
     }
-}
+};
 
 const registerUser = asyncHandler(async (req, res) => {
     const { name, email, password } = req.validateData;
@@ -83,7 +83,6 @@ const loginUser = asyncHandler(async (req, res) => {
     const options = {
         httpOnly: true,
         secure: true,
-        maxAge: pr
     }
 
     return res.status(200)
@@ -309,8 +308,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
         .status(200)
         .json(
             new ApiResponse(200, {}, "Password Changed successfully.")
-        )
-
+        );
 });
 
 export { registerUser, loginUser, logoutUser, getCurrentUser, verifyEmail, resendEmailVerification, refreshAccessToken, forgotPassword, resetForgotPassword, changeCurrentPassword }; 

@@ -101,7 +101,7 @@ SectionSchema.methods.getLectureCount = function () {
 const CourseSchema = new Schema(
     {
         title: { type: String, required: true, trim: true },
-        slug: { type: String, required: true, unique: true },
+        slug: { type: String, unique: true },
         description: { type: String, required: true },
         category: { type: [String], required: true }, // tags/categories
         level: {
@@ -116,7 +116,7 @@ const CourseSchema = new Schema(
             default: "Hinglish",
             required: true,
         },
-        thumbnail: { type: String, required: true },
+        thumbnail: { type: String, /*required: true*/    },
         instructor: { type: Schema.Types.ObjectId, ref: "User", required: true },
         contributors: [{ type: Schema.Types.ObjectId, ref: "User" }],
         sections: [{ type: Schema.Types.ObjectId, ref: "Section" }],
@@ -189,6 +189,6 @@ CourseSchema.methods.updateAverageRating = async function () {
 };
 
 /* ---------------- Models ---------------- */
-export const CourseModel = mongoose.model("Course", CourseSchema);
+export const CourseModel = mongoose.models.Course || mongoose.model("Course", CourseSchema);
 export const SectionModel = mongoose.model("Section", SectionSchema);
 export const LectureModel = mongoose.model("Lecture", LectureSchema);
